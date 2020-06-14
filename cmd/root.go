@@ -14,25 +14,32 @@ import (
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
+var (
+	cfgFile string
+	path    string
+)
 
 var rootCmd = &cobra.Command{
 	Use:   "chars-gist",
 	Short: "Creates a histogram of character usage",
 	Long: `Creates a histogram of ASCII character usage 
-in text files from the specified folder.`,
+in text files from the specified folder.
+Example:
+chars-gist --path "C:/example"
+or
+chars-gist --path "example"`,
 
 	// Run function create histogram of character usage
 	Run: func(cmd *cobra.Command, args []string) {
 		// Check args
-		if len(args) < 1 {
+		if path == "" {
 			fmt.Println("Please set a path to folder with files")
 			return
 		}
 		fmt.Println("Starting the app...")
 
 		// Getting a folder with files
-		files, err := ioutil.ReadDir(args[1])
+		files, err := ioutil.ReadDir(path)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -48,7 +55,7 @@ in text files from the specified folder.`,
 			// Reading each file in goroutine
 			go func(filename string) {
 				// Open the file
-				f, err := os.Open(args[1] + "/" + filename)
+				f, err := os.Open(path + "/" + filename)
 				if err != nil {
 					fmt.Println(err)
 					return
@@ -107,7 +114,7 @@ in text files from the specified folder.`,
 			}
 		}
 
-		fmt.Printf("The result is saved in %s/%s\n", args[1], resultFileName)
+		fmt.Printf("The result is saved in %s/%s\n", path, resultFileName)
 
 	},
 }
@@ -132,7 +139,8 @@ func init() {
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().String("path", "", "Help message for toggle")
+	//rootCmd.Flags().String("path", "", "Help message for toggle")
+	rootCmd.Flags().StringVar(&path, "path", "", "example: --path \"C:/example\"")
 }
 
 // initConfig reads in config file and ENV variables if set.
