@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/spf13/cobra"
+	"io"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -15,7 +16,6 @@ import (
 
 var cfgFile string
 
-// rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "chars-gist",
 	Short: "Creates a histogram of character usage",
@@ -35,13 +35,13 @@ in text files from the specified folder.`,
 		}
 
 		m := make(map[int32]int64)
-		mutex := &sync.RWMutex{}
+		mutex := &sync.Mutex{}
 		wg := &sync.WaitGroup{}
 		wg.Add(len(files))
 
 		for _, file := range files {
 			go func(filename string) {
-				f, err := os.Open(args[1]+"/"+filename)
+				f, err := os.Open(args[1] + "/" + filename)
 				if err != nil {
 					fmt.Println(err)
 					return
@@ -55,24 +55,23 @@ in text files from the specified folder.`,
 					}
 				}()
 
-				scanner := bufio.NewScanner(f)
-				n := 0
-				for scanner.Scan() {
-					for _, char := range scanner.Text() {
-						mutex.Lock()
-						if _, ok := m[char]; ok {
-							m[char]++
-						} else {
-							m[char] = 1
+				reader := bufio.NewReader(f)
+				for {
+					char, _, err := reader.ReadRune()
+					if err != nil {
+						if err == io.EOF {
+							break
 						}
-						mutex.Unlock()
+						fmt.Println(err)
+						return
 					}
-					n++
-				}
-
-				if err := scanner.Err(); err != nil {
-					fmt.Println(err)
-					return
+					mutex.Lock()
+					if _, ok := m[char]; ok {
+						m[char]++
+					} else {
+						m[char] = 1
+					}
+					mutex.Unlock()
 				}
 				wg.Done()
 			}(file.Name())
@@ -88,7 +87,6 @@ in text files from the specified folder.`,
 			return
 		}
 		for key, value := range m {
-			//_, err := resultFile.WriteString([]byte(string(key) + " " + value))
 			_, err := resultFile.WriteString(fmt.Sprintf("%q %d\n", key, value))
 			if err != nil {
 				fmt.Println(err)
@@ -96,9 +94,7 @@ in text files from the specified folder.`,
 			}
 		}
 
-
-
-		fmt.Printf("Save result in file %s/%s\n", args[1], resultFileName)
+		fmt.Printf("The result is saved in %s/%s\n", args[1], resultFileName)
 
 	},
 }
