@@ -22,25 +22,32 @@ var rootCmd = &cobra.Command{
 	Long: `Creates a histogram of ASCII character usage 
 in text files from the specified folder.`,
 
+	// Run function create histogram of character usage
 	Run: func(cmd *cobra.Command, args []string) {
+		// Check args
 		if len(args) < 1 {
 			fmt.Println("Please set a path to folder with files")
 			return
 		}
 		fmt.Println("Starting the app...")
+
+		// Getting a folder with files
 		files, err := ioutil.ReadDir(args[1])
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 
+		// Making a map to collect the result and some sync things
 		m := make(map[int32]int64)
 		mutex := &sync.Mutex{}
 		wg := &sync.WaitGroup{}
 		wg.Add(len(files))
 
 		for _, file := range files {
+			// Reading each file in goroutine
 			go func(filename string) {
+				// Open the file
 				f, err := os.Open(args[1] + "/" + filename)
 				if err != nil {
 					fmt.Println(err)
@@ -55,6 +62,7 @@ in text files from the specified folder.`,
 					}
 				}()
 
+				// Reading the file
 				reader := bufio.NewReader(f)
 				for {
 					char, _, err := reader.ReadRune()
@@ -65,6 +73,7 @@ in text files from the specified folder.`,
 						fmt.Println(err)
 						return
 					}
+					// Adding a char in the map
 					mutex.Lock()
 					if _, ok := m[char]; ok {
 						m[char]++
@@ -77,8 +86,10 @@ in text files from the specified folder.`,
 			}(file.Name())
 		}
 
+		// Waiting all goroutines
 		wg.Wait()
 
+		// Creating a file for the result with time stamp
 		datetime := fmt.Sprint(time.Now().Format("2006-01-02_15-04-05"))
 		resultFileName := "gist_" + datetime + ".txt"
 		resultFile, err := os.Create(resultFileName)
@@ -86,6 +97,8 @@ in text files from the specified folder.`,
 			fmt.Println(err)
 			return
 		}
+
+		// Writing the results line by line
 		for key, value := range m {
 			_, err := resultFile.WriteString(fmt.Sprintf("%q %d\n", key, value))
 			if err != nil {
