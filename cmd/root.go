@@ -17,6 +17,7 @@ import (
 var (
 	cfgFile string
 	path    string
+	out     string
 )
 
 var rootCmd = &cobra.Command{
@@ -99,6 +100,9 @@ chars-gist --path "example"`,
 		// Creating a file for the result with time stamp
 		datetime := fmt.Sprint(time.Now().Format("2006-01-02_15-04-05"))
 		resultFileName := "gist_" + datetime + ".txt"
+		if out != "" {
+			resultFileName = out + "/" + resultFileName
+		}
 		resultFile, err := os.Create(resultFileName)
 		if err != nil {
 			fmt.Println(err)
@@ -141,6 +145,7 @@ func init() {
 	// when this action is called directly.
 	//rootCmd.Flags().String("path", "", "Help message for toggle")
 	rootCmd.Flags().StringVar(&path, "path", "", "example: --path \"C:/example\"")
+	rootCmd.Flags().StringVar(&out, "out", "", "example: --out \"C:/out\"")
 }
 
 // initConfig reads in config file and ENV variables if set.
