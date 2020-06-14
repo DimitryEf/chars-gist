@@ -32,3 +32,9 @@ chars-gist --path "C:/example" --out "C:/result"
 'f' 9
 '\r' 11
 ```
+
+## Компиляция исходников
+```
+go build -o chars-gist.exe main.go
+```
+
